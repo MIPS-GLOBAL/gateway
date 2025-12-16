@@ -141,8 +141,9 @@ class Gateway
     
     /**
      * Get request body
+     * @return string|array - string for JSON/form-urlencoded, array for multipart with files
      */
-    private function getRequestBody(): string
+    private function getRequestBody(): string|array
     {
         $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
         
@@ -163,8 +164,9 @@ class Gateway
     
     /**
      * Build multipart form body (for file uploads)
+     * @return array - array format required for CURLFile support
      */
-    private function buildMultipartBody(): string
+    private function buildMultipartBody(): array
     {
         // For multipart requests with files, use CURLFile
         $postData = [];
