@@ -1,0 +1,16 @@
+<?php
+/**
+ * Database Configuration Example
+ * Copy this to database.php and update with your server credentials
+ */
+
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'vaultpay_gateway');
+define('DB_USER', 'your_db_user');
+define('DB_PASS', 'your_db_password');
+define('DB_CHARSET', 'utf8mb4');
+
+// Table names
+define('TABLE_RATE_LIMITS', 'tbl_rate_limits');
+define('TABLE_BLOCKED_IPS', 'tbl_blocked_ips');
+define('TABLE_REQUEST_LOGS', 'tbl_request_logs');

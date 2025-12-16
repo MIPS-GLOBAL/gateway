@@ -1,0 +1,22 @@
+# Logs
+logs/*.log
+logs/*.txt
+
+# Config overrides (for local development)
+config/config.local.php
+
+# Config (sensitive) - use database.php.example as template
+config/database.php
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep logs directory
+!logs/.gitkeep
