@@ -149,8 +149,16 @@ class Gateway
         
         // Handle multipart form data
         if (strpos($contentType, 'multipart/form-data') !== false) {
-            // For multipart, we need to rebuild the body
-            return $this->buildMultipartBody();
+            // Check if there are any files
+            $hasFiles = !empty($_FILES) && $this->hasValidFiles();
+            
+            if ($hasFiles) {
+                // For multipart with files, use array format for CURLFile support
+                return $this->buildMultipartBody();
+            } else {
+                // No files - convert to URL-encoded (backend expects this format)
+                return http_build_query($_POST);
+            }
         }
         
         // Handle URL-encoded form data
@@ -160,6 +168,27 @@ class Gateway
         
         // For JSON and other content types, return raw input
         return file_get_contents('php://input');
+    }
+    
+    /**
+     * Check if there are valid uploaded files
+     */
+    private function hasValidFiles(): bool
+    {
+        foreach ($_FILES as $file) {
+            if (is_array($file['error'])) {
+                foreach ($file['error'] as $error) {
+                    if ($error === UPLOAD_ERR_OK) {
+                        return true;
+                    }
+                }
+            } else {
+                if ($file['error'] === UPLOAD_ERR_OK) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     /**
