@@ -157,6 +157,11 @@ class Gateway
                 return $this->buildMultipartBody();
             } else {
                 // No files - convert to URL-encoded (backend expects this format)
+                // If $_POST is empty, try to parse from raw input
+                if (empty($_POST)) {
+                    $postData = $this->parseMultipartFormData();
+                    return http_build_query($postData);
+                }
                 return http_build_query($_POST);
             }
         }
@@ -168,6 +173,57 @@ class Gateway
         
         // For JSON and other content types, return raw input
         return file_get_contents('php://input');
+    }
+    
+    /**
+     * Parse multipart form data from raw input when $_POST is empty
+     */
+    private function parseMultipartFormData(): array
+    {
+        $data = [];
+        $rawInput = file_get_contents('php://input');
+        
+        if (empty($rawInput)) {
+            return $data;
+        }
+        
+        // Get boundary from content type
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        if (!preg_match('/boundary=(.*)$/i', $contentType, $matches)) {
+            return $data;
+        }
+        
+        $boundary = trim($matches[1], '"');
+        
+        // Split by boundary
+        $parts = preg_split('/-+' . preg_quote($boundary) . '/', $rawInput);
+        
+        foreach ($parts as $part) {
+            if (empty(trim($part)) || $part === '--') {
+                continue;
+            }
+            
+            // Split headers from content
+            $segments = preg_split('/\r\n\r\n/', $part, 2);
+            if (count($segments) !== 2) {
+                continue;
+            }
+            
+            $headers = $segments[0];
+            $content = rtrim($segments[1], "\r\n");
+            
+            // Get field name
+            if (preg_match('/name="([^"]+)"/', $headers, $nameMatch)) {
+                $fieldName = $nameMatch[1];
+                
+                // Skip if it's a file (has filename)
+                if (strpos($headers, 'filename=') === false) {
+                    $data[$fieldName] = $content;
+                }
+            }
+        }
+        
+        return $data;
     }
     
     /**
