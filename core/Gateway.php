@@ -127,11 +127,33 @@ class Gateway
             }
         }
         
-        // Add X-Forwarded headers
+        // Add X-Forwarded headers with real client IP
         $clientIp = getClientIp();
-        $headers[] = 'X-Forwarded-For: ' . $clientIp;
+        
+        // Build X-Forwarded-For chain: append gateway IP if there's already a chain
+        $existingForwardedFor = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+        if (!empty($existingForwardedFor)) {
+            // Preserve the original chain and add gateway's view of client IP
+            $headers[] = 'X-Forwarded-For: ' . $existingForwardedFor;
+        } else {
+            $headers[] = 'X-Forwarded-For: ' . $clientIp;
+        }
+        
         $headers[] = 'X-Forwarded-Proto: ' . (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http');
         $headers[] = 'X-Real-IP: ' . $clientIp;
+        
+        // Also forward CF-Connecting-IP if present (Cloudflare)
+        if (!empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            $headers[] = 'CF-Connecting-IP: ' . $_SERVER['HTTP_CF_CONNECTING_IP'];
+        }
+        
+        // Forward the original client IP from the website if provided
+        if (!empty($_SERVER['HTTP_X_CLIENT_IP'])) {
+            $headers[] = 'X-Client-IP: ' . $_SERVER['HTTP_X_CLIENT_IP'];
+        }
+        
+        // Add a custom header with the gateway's determined client IP
+        $headers[] = 'X-Gateway-Client-IP: ' . $clientIp;
         
         // ALWAYS inject the backend API key
         $headers[] = 'api-key: ' . BACKEND_API_KEY;
